@@ -15,7 +15,14 @@ import { listenSystemMode } from './utils/darkModeUtils'
 import LanguageDetector from 'i18next-browser-languagedetector';
 export const endpoint = process.env.API_URL || 'http://localhost:3001'
 export const oauth_url = process.env.API_URL + '/user/github'
-export const client = treaty<Server>(endpoint)
+
+//export const client = treaty<Server>(endpoint)
+export const client = treaty<Server>(endpoint, {
+    fetch: {
+        credentials: 'include'
+    }
+})
+
 listenSystemMode()
 i18n
   .use(Backend)
