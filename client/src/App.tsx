@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useContext } from 'react'
 import { Helmet } from 'react-helmet'
 import { getCookie } from 'typescript-cookie'
 import { DefaultParams, PathPattern, Route, Switch } from 'wouter'
@@ -23,6 +23,8 @@ import { tryInt } from './utils/int'
 import { SearchPage } from './page/search.tsx'
 import { Tips, TipsPage } from './components/tips.tsx'
 import { useTranslation } from 'react-i18next'
+import { MomentsPage } from './page/moments'
+import { ErrorPage } from './page/error.tsx'
 
 function App() {
   const ref = useRef(false)
@@ -78,7 +80,10 @@ function App() {
             <RouteMe path="/timeline">
               <TimelinePage />
             </RouteMe>
-
+            
+            <RouteMe path="/moments">
+              <MomentsPage />
+            </RouteMe>
 
             <RouteMe path="/friends">
               <FriendsPage />
@@ -100,16 +105,16 @@ function App() {
               }}
             </RouteMe>
 
-            <RouteMe path="/settings" paddingClassName='mx-4'>
+            <RouteMe path="/settings" paddingClassName='mx-4' requirePermission>
               <Settings />
             </RouteMe>
 
 
-            <RouteMe path="/writing" paddingClassName='mx-4'>
+            <RouteMe path="/writing" paddingClassName='mx-4' requirePermission>
               <WritingPage />
             </RouteMe>
 
-            <RouteMe path="/writing/:id" paddingClassName='mx-4'>
+            <RouteMe path="/writing/:id" paddingClassName='mx-4' requirePermission>
               {({ id }) => {
                 const id_num = tryInt(0, id)
                 return (
@@ -161,7 +166,9 @@ function App() {
             </RouteMe>
 
             {/* Default route in a switch */}
-            <Route>404: No such page!</Route>
+            <RouteMe>
+              <ErrorPage error={t('error.not_found')} />
+            </RouteMe>
           </Switch>
         </ProfileContext.Provider>
       </ClientConfigContext.Provider>
@@ -169,8 +176,14 @@ function App() {
   )
 }
 
-function RouteMe({ path, children, headerComponent, paddingClassName }:
-  { path: PathPattern, children: React.ReactNode | ((params: DefaultParams) => React.ReactNode), headerComponent?: React.ReactNode, paddingClassName?: string }) {
+function RouteMe({ path, children, headerComponent, paddingClassName, requirePermission }:
+  { path?: PathPattern, children: React.ReactNode | ((params: DefaultParams) => React.ReactNode), headerComponent?: React.ReactNode, paddingClassName?: string, requirePermission?: boolean }) {
+  if (requirePermission) {
+    const profile = useContext(ProfileContext);
+    const { t } = useTranslation();
+    if (!profile?.permission)
+      children = <ErrorPage error={t('error.permission_denied')} />;
+  }
   return (
     <Route path={path} >
       {params => {
